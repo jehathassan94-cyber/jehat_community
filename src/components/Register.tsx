@@ -216,8 +216,10 @@ export default function Register({
       } else {
         setError(data.error || "فشل التسجيل. يرجى مراجعة الحقول والرموز.");
       }
-    } catch (err) {
-      setError("حدث خطأ أثناء التسجيل. اتصل بالدعم.");
+} catch (error: any) {
+  const serverError = error.response?.data?.error || error.message || "خطأ غير معروف";
+  setMessage(`فشل التسجيل بسبب: ${serverError}`);
+}
     } finally {
       setLoading(false);
     }
