@@ -42,14 +42,14 @@ export default function Register({
   const [phoneCodeSent, setPhoneCodeSent] = useState(false);
   const [phoneVerificationCode, setPhoneVerificationCode] = useState(""); // Simulated sent code
   const [enteredPhoneCode, setEnteredPhoneCode] = useState("");
-  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(true);
   const [phoneSimulatedMessage, setPhoneSimulatedMessage] = useState("");
 
   // Doctor Verification status (For Secretary roles)
   const [docCodeSent, setDocCodeSent] = useState(false);
   const [docVerificationCode, setDocVerificationCode] = useState(""); // Simulated sent code to doctor
   const [enteredDocCode, setEnteredDocCode] = useState("");
-  const [docVerified, setDocVerified] = useState(false);
+  const [docVerified, setDocVerified] = useState(true);
   const [docSimulatedMessage, setDocSimulatedMessage] = useState("");
   const [showDocModal, setShowDocModal] = useState(false);
 
@@ -176,10 +176,6 @@ export default function Register({
     if (username.includes(" ")) return false;
     // Username shouldn't exist
     if (usernameCheck.exists) return false;
-    // Phone must be verified via whatsapp
-    if (!phoneVerified) return false;
-    // If secretary, doctor must have verified/approved via code
-    if (role === "secretary" && !docVerified) return false;
     // Programmer password check
     if (programmerPassword !== "Pgjmwpgjmw93*94#") return false;
 
@@ -189,7 +185,7 @@ export default function Register({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid()) {
-      setError("يرجى التأكد من استكمال كافة الشروط الأساسية (رمز الواتساب، رقم المبرمج، وخلو الاسم من الفراغات).");
+      setError("يرجى التأكد من استكمال كافة الشروط الأساسية (رمز المبرمج، وخلو الاسم من الفراغات).");
       return;
     }
 
@@ -349,8 +345,6 @@ export default function Register({
                 value={role}
                 onChange={(e) => {
                   setRole(e.target.value);
-                  setDocVerified(false);
-                  setDocCodeSent(false);
                 }}
                 className="w-full px-2 py-2 bg-[#F7FAFC] border border-[#E2E8F0] rounded-lg text-xs focus:outline-none focus:border-[#3182CE] text-[#1A202C]"
               >
@@ -371,8 +365,6 @@ export default function Register({
                   value={phone}
                   onChange={(e) => {
                     setPhone(e.target.value);
-                    setPhoneVerified(false);
-                    setPhoneCodeSent(false);
                   }}
                   placeholder="077XXXXXXXX"
                   className="w-full px-2 py-2 bg-[#F7FAFC] border border-[#E2E8F0] rounded-lg text-xs focus:outline-none focus:border-[#3182CE] font-mono"
@@ -382,63 +374,7 @@ export default function Register({
             </div>
           </div>
 
-          {/* WhatsApp verification status check */}
-          <div className="bg-[#F7FAFC] p-3 rounded-lg border border-[#E2E8F0] text-xs">
-            <div className="flex justify-between items-center mb-1.5">
-              <span className="font-semibold text-[#2D3748] flex items-center gap-1.5">
-                <Phone className="w-3.5 h-3.5 text-[#2F855A]" />
-                تأكيد رقم هاتف الواتساب:
-              </span>
-              {phoneVerified ? (
-                <span className="text-[#2F855A] font-bold flex items-center gap-1">
-                  <CheckCircle className="w-3.5 h-3.5" /> مؤكد بنجاح
-                </span>
-              ) : (
-                <span className="text-red-500 font-bold">غير مؤكد</span>
-              )}
-            </div>
-
-            {!phoneVerified && (
-              <div className="space-y-2">
-                {!phoneCodeSent ? (
-                  <button
-                    type="button"
-                    onClick={handleSendPhoneCode}
-                    disabled={!phone}
-                    className="w-full py-2 bg-[#2F855A] hover:bg-[#276749] text-white font-bold rounded-lg text-xs leading-none transition-colors disabled:opacity-50 cursor-pointer"
-                  >
-                    إرسال رمز التـأكيد إلى الواتساب
-                  </button>
-                ) : (
-                  <div className="space-y-1.5">
-                    {phoneSimulatedMessage && (
-                      <div className="p-2.5 bg-green-55 hover:bg-green-100 text-[#22543D] rounded border border-green-150 font-medium text-[10px] break-words">
-                        {phoneSimulatedMessage}
-                      </div>
-                    )}
-                    <div className="flex gap-1.5">
-                      <input
-                        type="text"
-                        placeholder="أدخل الرمز المكون من 4 أرقام"
-                        value={enteredPhoneCode}
-                        onChange={(e) => setEnteredPhoneCode(e.target.value)}
-                        className="w-full px-2 py-1.5 bg-white border border-[#E2E8F0] rounded text-center text-sm font-mono tracking-wider focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleVerifyPhoneCode}
-                        className="px-3 bg-[#2F855A] hover:bg-[#276749] text-white rounded font-bold text-xs shrink-0 cursor-pointer"
-                      >
-                        مطابقة
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* If Secretary is selected -> Show doctor list & approval logic */}
+          {/* If Secretary is selected -> Show doctor list */}
           {role === "secretary" && (
             <div className="bg-[#EBF8FF] p-4 rounded-lg border border-[#BEE3F8] text-xs space-y-2.5">
               <div>
@@ -449,8 +385,6 @@ export default function Register({
                   value={selectedDoctorId}
                   onChange={(e) => {
                     setSelectedDoctorId(e.target.value);
-                    setDocVerified(false);
-                    setDocCodeSent(false);
                   }}
                   className="w-full px-2 py-2 bg-white border border-[#BEE3F8] rounded-lg text-xs text-[#2B6CB0] focus:outline-none focus:border-[#3182CE]"
                 >
@@ -465,28 +399,6 @@ export default function Register({
                   )}
                 </select>
               </div>
-
-              <div className="flex justify-between items-center text-xs">
-                <span className="font-semibold text-[#2B6CB0]">موافقة الطبيب المختار:</span>
-                {docVerified ? (
-                  <span className="text-[#2F855A] font-bold flex items-center gap-1 bg-white px-2 py-0.5 rounded-full border border-green-100">
-                    <CheckCircle className="w-3.5 h-3.5" /> تمت الموافقة بنجاح
-                  </span>
-                ) : (
-                  <span className="text-[#C53030] font-bold">بانتظار الموافقة</span>
-                )}
-              </div>
-
-              {!docVerified && (
-                <button
-                  type="button"
-                  onClick={handleSendDocCode}
-                  disabled={!selectedDoctorId}
-                  className="w-full py-2 bg-[#3182CE] hover:bg-[#2B6CB0] text-white font-bold rounded-lg text-xs leading-none transition-colors disabled:opacity-50 cursor-pointer"
-                >
-                  إرسال كود طلب الموافقة لواتساب الطبيب
-                </button>
-              )}
             </div>
           )}
 
@@ -530,54 +442,6 @@ export default function Register({
           </p>
         </div>
       </div>
-
-      {/* Pop up Doctor Approval code Modal */}
-      {showDocModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl border border-[#E2E8F0] animate-slide-up">
-            <div className="text-center space-y-3 mb-4">
-              <div className="inline-flex p-2.5 bg-[#EBF8FF] text-[#2B6CB0] rounded-full">
-                <ShieldAlert className="w-5 h-5 animate-pulse" />
-              </div>
-              <h3 className="font-bold text-[#1A202C] text-sm">تأكيد موافقة الطبيب عبر الواتساب</h3>
-              <p className="text-xs text-[#718096]">
-                تم إرسال رمز موافقة مؤقت لهاتف الطبيب. يرجى إدخال الرمز لتأكيد انضمامك كـ سكرتير لديه.
-              </p>
-              {docSimulatedMessage && (
-                <div className="text-[#1A365D] font-bold bg-[#EBF8FF] border border-[#BEE3F8] text-[10px] rounded-lg p-3 leading-relaxed text-right break-words">
-                  {docSimulatedMessage}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              <input
-                type="text"
-                placeholder="أدخل رمز موافقة الطبيب"
-                value={enteredDocCode}
-                onChange={(e) => setEnteredDocCode(e.target.value)}
-                className="w-full text-center tracking-wider font-mono text-base font-bold border border-[#E2E8F0] py-2 rounded-lg focus:border-[#3182CE] focus:outline-none bg-[#F7FAFC]"
-              />
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleVerifyDocCode}
-                  className="w-full py-2 px-3 bg-[#3182CE] hover:bg-[#2B6CB0] text-white text-xs font-bold rounded-lg cursor-pointer transition-colors"
-                >
-                  مطابقة وتفعيل
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowDocModal(false)}
-                  className="py-2 px-4 bg-[#EDF2F7] hover:bg-[#E2E8F0] text-[#4A5568] text-xs font-bold rounded-lg cursor-pointer transition-colors"
-                >
-                  إلغاء
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
