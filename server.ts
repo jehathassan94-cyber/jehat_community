@@ -5,6 +5,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js"; // استيراد موصل سوبابيز
 
+
 dotenv.config();
 let aiClient: any = null;
 function getAiClient() {
