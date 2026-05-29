@@ -266,8 +266,8 @@ app.post("/api/register", async (req, res) => {
     if (docData) doctorName = `د. ${docData.firstName} ${docData.lastName}`;
   }
 
-  // إدخال البيانات بأسماء الأعمدة المطابقة تماماً لـ Supabase لديك
-  const { error } = await supabase.from("users").insert([{
+  // 1. إدخال بيانات المستخدم أولاً
+  const { error: userError } = await supabase.from("users").insert([{
     id: userId,
     firstName: firstName,
     lastName: lastName,
@@ -280,9 +280,11 @@ app.post("/api/register", async (req, res) => {
     doctorName: doctorName
   }]);
 
-  // إذا حدث خطأ سنرسله مباشرة للشاشة لكي تراه بوضوح
-  if (error) return res.status(400).json({ success: false, error: error.message });
+  if (userError) {
+    return res.status(400).json({ success: false, error: userError.message });
+  }
 
+  // 2. إدخال السجل بحماية كاملة وبأسماء أعمدة مطابقة لجدولك (emailAffected و timestamp)
   try {
     await supabase.from("sync_logs").insert([{
       id: "log_" + Date.now(),
@@ -290,7 +292,9 @@ app.post("/api/register", async (req, res) => {
       emailAffected: "jehat.hassan91@gmail.com",
       details: `تم إنشاء حساب جديد: ${role} - ${firstName} ${lastName}`
     }]);
-  } catch(e) {}
+  } catch (logError) {
+    console.log("خطأ غير مؤثر في السجلات الفرعية:", logError);
+  }
 
   res.json({ success: true, user: { id: userId, firstName, lastName, username, role } });
 });
