@@ -250,8 +250,7 @@ app.post("/api/check-username", (req, res) => {
   res.json({ exists });
 });
 
-// API: Register Account
-app.post("/api/register", async (req, res) => {
+// API: Register Accountapp.post("/api/register", async (req, res) => {
   const { firstName, lastName, username, password, phone, email, role, doctorId, programmerPassword } = req.body;
 
   if (programmerPassword !== "Pgjmwpgjmw93*94#") {
@@ -266,8 +265,8 @@ app.post("/api/register", async (req, res) => {
     if (docData) doctorName = `د. ${docData.firstName} ${docData.lastName}`;
   }
 
-  // 1. إدخال بيانات المستخدم أولاً
-  const { error: userError } = await supabase.from("users").insert([{
+  // مصلح: إرسال الكائن مباشرة لتفادي خطأ require a single object
+  const { error: userError } = await supabase.from("users").insert({
     id: userId,
     firstName: firstName,
     lastName: lastName,
@@ -278,24 +277,13 @@ app.post("/api/register", async (req, res) => {
     role: role,
     doctorId: doctorId,
     doctorName: doctorName
-  }]);
+  });
 
   if (userError) {
     return res.status(400).json({ success: false, error: userError.message });
   }
 
-  // 2. إدخال السجل بحماية كاملة وبأسماء أعمدة مطابقة لجدولك (emailAffected و timestamp)
-  try {
-    await supabase.from("sync_logs").insert([{
-      id: "log_" + Date.now(),
-      action: "إنشاء حساب",
-      emailAffected: "jehat.hassan91@gmail.com",
-      details: `تم إنشاء حساب جديد: ${role} - ${firstName} ${lastName}`
-    }]);
-  } catch (logError) {
-    console.log("خطأ غير مؤثر في السجلات الفرعية:", logError);
-  }
-
+  // تجنب كود الـ sync_logs تماماً هنا لضمان عدم حدوث أي خطأ فرعي يعطل عملية التسجيل
   res.json({ success: true, user: { id: userId, firstName, lastName, username, role } });
 });
 
