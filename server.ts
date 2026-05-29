@@ -1,12 +1,11 @@
 import express from "express";
 import path from "path";
-import fs from "fs";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import { createClient } from "@supabase/supabase-js"; // استيراد موصل سوبابيز
 
 dotenv.config();
-
 let aiClient: any = null;
 function getAiClient() {
   if (!aiClient) {
@@ -24,15 +23,14 @@ function getAiClient() {
   }
   return aiClient;
 }
+// تهيئة عميل Supabase للاتصال بقاعدة البيانات أونلاين
+const supabaseUrl = process.env.SUPABASE_URL || "";
+const supabaseKey = process.env.SUPABASE_ANON_KEY || "";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const app = express();
 const PORT = 3000;
-const DB_PATH = path.join(process.cwd(), "data", "database.json");
 
-// Make sure the data folder exists
-if (!fs.existsSync(path.dirname(DB_PATH))) {
-  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
-}
 
 // Initial structure for the JSON Database
 interface User {
@@ -252,66 +250,48 @@ app.post("/api/check-username", (req, res) => {
 });
 
 // API: Register Account
-app.post("/api/register", (req, res) => {
-  const {
-    firstName,
-    lastName,
-    username,
-    password,
-    phone,
-    email,
-    role,
-    doctorId,
-    programmerPassword
-  } = req.body;
+app.post("/api/register", async (req, res) => {
+  const { firstName, lastName, username, password, phone, email, role, doctorId, programmerPassword } = req.body;
 
-  // Validation
+  // فحص كلمة سر المبرمج المحددة لحماية الموقع
   if (programmerPassword !== "Pgjmwpgjmw93*94#") {
     return res.status(400).json({ success: false, error: "كلمة سر المبرمج غير صحيحة!" });
   }
 
-  if (!firstName || !lastName || !username || !password || !phone || !email || !role) {
-    return res.status(400).json({ success: false, error: "الرجاء تعبئة كافة الحقول" });
-  }
-
-  if (username.includes(" ")) {
-    return res.status(400).json({ success: false, error: "اسم المستخدم يجب أن يكون بدون فراغات" });
-  }
-
-  const db = readDb();
-  if (db.users.some(u => u.username.toLowerCase() === username.trim().toLowerCase())) {
-    return res.status(400).json({ success: false, error: "اسم المستخدم هذا مسجل مسبقاً" });
-  }
-
   const userId = "usr_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
   let doctorName = "";
+  
+  // جلب اسم الطبيب إذا كان الحساب لسكرتير
   if (role === "secretary" && doctorId) {
-    const doc = db.users.find(u => u.id === doctorId);
-    if (doc) {
-      doctorName = `د. ${doc.firstName} ${doc.lastName}`;
-    }
+    const { data: docData } = await supabase.from("users").select("*").eq("id", doctorId).single();
+    if (docData) doctorName = `د. ${docData.first_name} ${docData.last_name}`;
   }
 
-  const newUser: User = {
+  // إدخال البيانات في جدول المستخدمين في سوبابيز أونلاين
+  const { error } = await supabase.from("users").insert([{
     id: userId,
-    firstName: firstName.trim(),
-    lastName: lastName.trim(),
+    first_name: firstName,
+    last_name: lastName,
     username: username.trim().toLowerCase(),
-    passwordHash: password, // For easy recovery/view by the programmer as requested
-    phone: phone.trim(),
-    email: email.trim(),
+    password_hash: password,
+    phone,
+    email,
     role,
-    doctorId,
-    doctorName,
-    createdAt: new Date().toISOString()
-  };
+    doctor_id: doctorId,
+    doctor_name: doctorName
+  }]);
 
-  db.users.push(newUser);
-  writeDb(db);
+  if (error) return res.status(400).json({ success: false, error: "اسم المستخدم مسجل مسبقاً أو حدث خطأ في البيانات" });
 
-  addSyncLog("إنشاء حساب", "jehat.hassan91@gmail.com", `تم إنشاء حساب جديد بنجاح: ${newUser.role} - الاسم: ${newUser.firstName} ${newUser.lastName} - اسم المستخدم: ${newUser.username}`);
+  // تسجيل العملية في جدول السجلات أونلاين
+  await supabase.from("sync_logs").insert([{
+    id: "log_" + Date.now(),
+    action: "إنشاء حساب",
+    email_affected: "jehat.hassan91@gmail.com",
+    details: `تم إنشاء حساب جديد: ${role} - ${firstName} ${lastName}`
+  }]);
 
-  res.json({ success: true, user: newUser });
+  res.json({ success: true, user: { id: userId, firstName, lastName, username, role } });
 });
 
 // API: Login
