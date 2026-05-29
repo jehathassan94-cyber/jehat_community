@@ -282,8 +282,8 @@ app.post("/api/register", async (req, res) => {
     doctor_name: doctorName
   }]);
 
-  if (error) return res.status(400).json({ success: false, error: "اسم المستخدم مسجل مسبقاً أو حدث خطأ في البيانات" });
-
+if (error) return res.status(400).json({ success: false, error: error.message });
+  
   // تسجيل العملية في جدول السجلات أونلاين
   await supabase.from("sync_logs").insert([{
     id: "log_" + Date.now(),
