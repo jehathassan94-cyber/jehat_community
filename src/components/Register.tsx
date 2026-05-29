@@ -217,12 +217,11 @@ export default function Register({
         setError(data.error || "فشل التسجيل. يرجى مراجعة الحقول والرموز.");
       }
 } catch (error: any) {
-  const serverError = error.response?.data?.error || error.message || "خطأ غير معروف";
-  setMessage(`فشل التسجيل بسبب: ${serverError}`);
-}
-    } finally {
-      setLoading(false);
-    }
+    const serverError = error.response?.data?.error || error.message || "خطأ غير معروف";
+    setMessage(`فشل التسجيل بسبب: ${serverError}`);
+  } finally {
+    setLoading(false);
+  }
   };
 
   return (
