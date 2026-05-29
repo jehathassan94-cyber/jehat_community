@@ -254,7 +254,6 @@ app.post("/api/check-username", (req, res) => {
 app.post("/api/register", async (req, res) => {
   const { firstName, lastName, username, password, phone, email, role, doctorId, programmerPassword } = req.body;
 
-  // فحص كلمة سر المبرمج المحددة لحماية الموقع
   if (programmerPassword !== "Pgjmwpgjmw93*94#") {
     return res.status(400).json({ success: false, error: "كلمة سر المبرمج غير صحيحة!" });
   }
@@ -262,35 +261,36 @@ app.post("/api/register", async (req, res) => {
   const userId = "usr_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
   let doctorName = "";
   
-  // جلب اسم الطبيب إذا كان الحساب لسكرتير
   if (role === "secretary" && doctorId) {
     const { data: docData } = await supabase.from("users").select("*").eq("id", doctorId).single();
-    if (docData) doctorName = `د. ${docData.first_name} ${docData.last_name}`;
+    if (docData) doctorName = `د. ${docData.firstName} ${docData.lastName}`;
   }
 
-  // إدخال البيانات في جدول المستخدمين في سوبابيز أونلاين
+  // إدخال البيانات بأسماء الأعمدة المطابقة تماماً لـ Supabase لديك
   const { error } = await supabase.from("users").insert([{
     id: userId,
-    first_name: firstName,
-    last_name: lastName,
+    firstName: firstName,
+    lastName: lastName,
     username: username.trim().toLowerCase(),
-    password_hash: password,
-    phone,
-    email,
-    role,
-    doctor_id: doctorId,
-    doctor_name: doctorName
+    passwordHash: password,
+    phone: phone,
+    email: email,
+    role: role,
+    doctorId: doctorId,
+    doctorName: doctorName
   }]);
 
-if (error) return res.status(400).json({ success: false, error: error.message });
-  
-  // تسجيل العملية في جدول السجلات أونلاين
-  await supabase.from("sync_logs").insert([{
-    id: "log_" + Date.now(),
-    action: "إنشاء حساب",
-    email_affected: "jehat.hassan91@gmail.com",
-    details: `تم إنشاء حساب جديد: ${role} - ${firstName} ${lastName}`
-  }]);
+  // إذا حدث خطأ سنرسله مباشرة للشاشة لكي تراه بوضوح
+  if (error) return res.status(400).json({ success: false, error: error.message });
+
+  try {
+    await supabase.from("sync_logs").insert([{
+      id: "log_" + Date.now(),
+      action: "إنشاء حساب",
+      emailAffected: "jehat.hassan91@gmail.com",
+      details: `تم إنشاء حساب جديد: ${role} - ${firstName} ${lastName}`
+    }]);
+  } catch(e) {}
 
   res.json({ success: true, user: { id: userId, firstName, lastName, username, role } });
 });
