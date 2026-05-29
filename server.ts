@@ -251,6 +251,7 @@ app.post("/api/check-username", (req, res) => {
 });
 
 // API: Register Accountapp.post("/api/register", async (req, res) => {
+app.post("/api/register", async (req, res) => {
   const { firstName, lastName, username, password, phone, email, role, doctorId, programmerPassword } = req.body;
 
   if (programmerPassword !== "Pgjmwpgjmw93*94#") {
@@ -265,13 +266,13 @@ app.post("/api/check-username", (req, res) => {
     if (docData) doctorName = `د. ${docData.firstName} ${docData.lastName}`;
   }
 
-  // مصلح: إرسال الكائن مباشرة لتفادي خطأ require a single object
+  // مصلح تماماً: تم تعديل passwordHash إلى password_hash ليتوافق مع سوبابيز
   const { error: userError } = await supabase.from("users").insert({
     id: userId,
     firstName: firstName,
     lastName: lastName,
     username: username.trim().toLowerCase(),
-    passwordHash: password,
+    password_hash: password, // الحقل المطلوب في قاعدة البيانات
     phone: phone,
     email: email,
     role: role,
@@ -283,9 +284,11 @@ app.post("/api/check-username", (req, res) => {
     return res.status(400).json({ success: false, error: userError.message });
   }
 
-  // تجنب كود الـ sync_logs تماماً هنا لضمان عدم حدوث أي خطأ فرعي يعطل عملية التسجيل
   res.json({ success: true, user: { id: userId, firstName, lastName, username, role } });
 });
+
+
+
 
 // API: Login
 app.post("/api/login", (req, res) => {
