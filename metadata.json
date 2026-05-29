@@ -1,0 +1,8 @@
+{
+  "name": "Remix: مجتمع العيادات الطبية",
+  "description": "منصة شاملة لمجتمع العيادات الطبية، تدعم الطبيب والسكرتير لتسهيل التواصل وإدارة المرضى والوصفات الطبية بشكل فوري.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
