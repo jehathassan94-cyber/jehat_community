@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs"; // 👈 أضف هذا السطر هنا لحل مشكلة fs is not defined
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
